@@ -1,14 +1,4 @@
-<!-- Local rules -->
-
-<!-- Modify it at your will. -->
-<!-- Copyright (C) 2015, Wazuh Inc. -->
-
-<!-- Example -->
 <group name="local,syslog,sshd,">
-
-  <!--
-  Dec 10 01:02:02 host sshd[1234]: Failed none for root from 1.1.1.1 port 1066 ssh2
-  -->
   <rule id="100001" level="5">
     <if_sid>5716</if_sid>
     <srcip>1.1.1.1</srcip>
@@ -45,7 +35,6 @@
 </group>
 
 <group name="syslog,sshd,">
-  <!-- Працівники входять через SSH лише під наявними обліковими записами, тому спроба входу від імені неіснуючого користувача майже завжди означає перебір імен зловмисником (T1110) і має бути помітною подією рівня 10, а не губитися серед рутинних сповіщень рівня 5. -->
   <rule id="5710" level="10" overwrite="yes">
     <if_sid>5700</if_sid>
     <match>illegal user|invalid user</match>
