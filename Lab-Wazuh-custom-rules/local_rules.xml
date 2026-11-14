@@ -1,0 +1,67 @@
+<!-- Local rules -->
+
+<!-- Modify it at your will. -->
+<!-- Copyright (C) 2015, Wazuh Inc. -->
+
+<!-- Example -->
+<group name="local,syslog,sshd,">
+
+  <!--
+  Dec 10 01:02:02 host sshd[1234]: Failed none for root from 1.1.1.1 port 1066 ssh2
+  -->
+  <rule id="100001" level="5">
+    <if_sid>5716</if_sid>
+    <srcip>1.1.1.1</srcip>
+    <description>sshd: authentication failed from IP 1.1.1.1.</description>
+    <group>authentication_failed,pci_dss_10.2.4,pci_dss_10.2.5,</group>
+  </rule>
+
+</group>
+
+<!-- Правила процесів: практичне заняття 10 і частина 1 лабораторної роботи -->
+<group name="ossec,">
+  <rule id="100050" level="0">
+    <if_sid>530</if_sid>
+    <match>^ossec: output: 'process list'</match>
+    <description>List of running processes.</description>
+    <group>process_monitor,</group>
+  </rule>
+
+  <rule id="100051" level="7" ignore="900">
+    <if_sid>100050</if_sid>
+    <match>nc -l</match>
+    <description>netcat listening for incoming connections.</description>
+    <group>process_monitor,</group>
+  </rule>
+
+  <!--
+  Частина 1: простий вебсервер Python заборонено на робочих станціях,
+  бо він без автентифікації віддає вміст каталогу всім у мережі по HTTP.
+  Регулярний вираз ловить python, python3, python3.12 тощо з -m http.server.
+  ossec: output: 'process list':  4242 root     python3 -m http.server 8000
+  -->
+  <rule id="100052" level="10" ignore="60">
+    <if_sid>100050</if_sid>
+    <regex type="pcre2">python[\d.]*\s+-m\s*http\.server</regex>
+    <description>Unauthorized process: Python http.server is sharing a directory over HTTP.</description>
+    <mitre>
+      <id>T1048.003</id>
+    </mitre>
+    <group>process_monitor,</group>
+  </rule>
+</group>
+
+<!-- Частина 2: зміна рівня вбудованого правила 5710 з 0095-sshd_rules.xml -->
+<group name="syslog,sshd,">
+  <!-- Працівники входять через SSH лише під наявними обліковими записами, тому спроба входу від імені неіснуючого користувача майже завжди означає перебір імен зловмисником (T1110) і має бути помітною подією рівня 10, а не губитися серед рутинних сповіщень рівня 5. -->
+  <rule id="5710" level="10" overwrite="yes">
+    <if_sid>5700</if_sid>
+    <match>illegal user|invalid user</match>
+    <description>sshd: Attempt to login using a non-existent user</description>
+    <mitre>
+      <id>T1110.001</id>
+      <id>T1021.004</id>
+    </mitre>
+    <group>authentication_failed,gdpr_IV_35.7.d,gdpr_IV_32.2,gpg13_7.1,hipaa_164.312.b,invalid_login,nist_800_53_AU.14,nist_800_53_AC.7,nist_800_53_AU.6,pci_dss_10.2.4,pci_dss_10.2.5,pci_dss_10.6.1,tsc_CC6.1,tsc_CC6.8,tsc_CC7.2,tsc_CC7.3,</group>
+  </rule>
+</group>
